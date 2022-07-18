@@ -24,6 +24,5 @@ pkg_check_modules(PETSc REQUIRED IMPORTED_TARGET GLOBAL PETSc)
 add_executable(example example.c)
 target_link_libraries(example PUBLIC         PkgConfig::PETSc)
 
-#
-## include system specific hacks
-#include(config/systemHacks.cmake)
+add_executable(gMshExtrude gMshExtrude.c)
+target_link_libraries(gMshExtrude PUBLIC         PkgConfig::PETSc)
