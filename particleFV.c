@@ -4,6 +4,9 @@ static const char help[] = "Testing particle access to face geometry in parallel
 #include <petscdmswarm.h>
 #include <petscsf.h>
 #include <unistd.h>
+#include <petsc/private/dmpleximpl.h>
+
+void ReplaceDm(DM originalDm, DM replaceDm);
 
 int main(int argc, char **argv) {
     sleep(10);
@@ -25,15 +28,14 @@ int main(int argc, char **argv) {
         //!< Adds the interpartition ghost cells to the dm
         DM dmDist;
         PetscInt ghostCellDepth = 1;
-        // create any ghost cells that are needed
-        PetscCall(DMPlexDistribute(dm, ghostCellDepth, NULL, &dmDist));
-        ReplaceDm(dm, dmDist); // TODO: Copy the code over from the original function
+        PetscCall(DMPlexDistribute(dm, ghostCellDepth, NULL, &dmDist)); //!< create any ghost cells that are needed
+        ReplaceDm(dm, dmDist);
         DMSetBasicAdjacency(dm, PETSC_TRUE, PETSC_FALSE);
 
         /**  */
         DM gdm;
-        char labelName = "ghost";
-        DMPlexConstructGhostCells(dm, labelName.empty() ? nullptr : labelName.c_str(), NULL, &gdm) >> checkError;
+        char labelName[5] = "ghost";
+        DMPlexConstructGhostCells(dm, labelName, NULL, &gdm);
         ReplaceDm(dm, gdm);
     }
 
@@ -205,6 +207,23 @@ int main(int argc, char **argv) {
     PetscCall(DMDestroy(&dm));
     PetscFinalize();
     return 0;
+}
+
+void ReplaceDm(DM originalDm, DM replaceDm) {
+        // copy over the name
+        const char *name;
+        PetscObjectName((PetscObject) originalDm);
+        PetscObjectGetName((PetscObject) originalDm, &name);
+        PetscObjectSetName((PetscObject) replaceDm, name);
+
+        // Copy over the options object
+        PetscOptions options;
+        PetscObjectGetOptions((PetscObject) originalDm, &options);
+        PetscObjectSetOptions((PetscObject) replaceDm, options);
+        ((DM_Plex *) (replaceDm)->data)->useHashLocation = ((DM_Plex *) originalDm->data)->useHashLocation;
+
+        DMDestroy(&originalDm);
+        originalDm = replaceDm;
 }
 
 /*TEST
