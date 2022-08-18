@@ -24,5 +24,17 @@ pkg_check_modules(PETSc REQUIRED IMPORTED_TARGET GLOBAL PETSc)
 add_executable(example example.c)
 target_link_libraries(example PUBLIC         PkgConfig::PETSc)
 
-add_executable(gMshExtrude gMshExtrude.c)
+add_executable(gMshDistribute gmshDistribute.c)
+target_link_libraries(gMshDistribute PUBLIC         PkgConfig::PETSc)
+
+add_executable(gMshExtrude gmshExtrude.c)
 target_link_libraries(gMshExtrude PUBLIC         PkgConfig::PETSc)
+
+add_executable(gmshIO gmshIO.c)
+target_link_libraries(gmshIO PUBLIC         PkgConfig::PETSc)
+
+add_executable(subDmTest subDmTest.c)
+target_link_libraries(subDmTest PUBLIC         PkgConfig::PETSc)
+
+add_executable(gmshAreaCheck gmshAreaCheck.c)
+target_link_libraries(gmshAreaCheck PUBLIC         PkgConfig::PETSc)
