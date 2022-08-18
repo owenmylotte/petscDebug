@@ -21,7 +21,7 @@ project(petscTest VERSION 0.8.30)
 # Load the Required 3rd Party Libaries
 pkg_check_modules(PETSc REQUIRED IMPORTED_TARGET GLOBAL PETSc)
 
-add_executable(example example.c)
+add_executable(example particleFV.c)
 target_link_libraries(example PUBLIC         PkgConfig::PETSc)
 
 add_executable(gMshDistribute gmshDistribute.c)
