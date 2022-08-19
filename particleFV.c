@@ -5,52 +5,67 @@ static const char help[] = "Testing particle access to face geometry in parallel
 #include <petscsf.h>
 #include <unistd.h>
 #include <petsc/private/dmpleximpl.h>
+#include "stdbool.h"
 
-void ReplaceDm(DM originalDm, DM replaceDm);
+//void ReplaceDm(DM *originalDm, DM *replaceDm);
 
 int main(int argc, char **argv) {
     sleep(10);
 
+    /** When run with -n 4, the face geometry of several ghost labelled cells is blank */
+    bool ghostboundary = true; //!< Whether or not the mesh will be created with ghost cells
+    bool ghostpartition = true;
+    PetscReal steplength = 0.05; //!< How far the particle will be stepped on each iteration
+
     PetscCall(PetscInitialize(&argc, &argv, NULL, help));
 
-    PetscInt dimensions = 2;
-    PetscInt faces[2] = {100, 100};
+    PetscInt dimensions = 2; //!< Number of dimensions to instantiate the mesh with
+    PetscInt faces[2] = {10, 10};
     PetscReal lower[2] = {0, 0};
     PetscReal upper[2] = {1, 1};
     DMBoundaryType bc[2] = {DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC};
 
     DM dm;
     PetscCall(DMPlexCreateBoxMesh(PETSC_COMM_WORLD, dimensions, PETSC_FALSE, faces, lower, upper, bc, PETSC_TRUE, &dm));
+    PetscCall(DMPlexDistributeSetDefault(dm, PETSC_TRUE));
     PetscCall(DMSetFromOptions(dm));
 
     /** Add ghost cells to the mesh */
-    {
-        //!< Adds the interpartition ghost cells to the dm
-        DM dmDist;
+    if (ghostpartition) {        //!< Adds the inter-partition ghost cells to the dm
+        DM dmDist = NULL;
         PetscInt ghostCellDepth = 1;
         PetscCall(DMPlexDistribute(dm, ghostCellDepth, NULL, &dmDist)); //!< create any ghost cells that are needed
-        ReplaceDm(dm, dmDist);
+        if (dmDist) {
+            PetscCall(DMDestroy(&dm));
+            dm = dmDist;
+        }
+//        PetscCall(DMDestroy(&dmDist));
         DMSetBasicAdjacency(dm, PETSC_TRUE, PETSC_FALSE);
+    }
 
-        /**  */
+    if (ghostboundary) {/** Adds boundary ghost cells to the dm */
         DM gdm;
         char labelName[5] = "ghost";
         DMPlexConstructGhostCells(dm, labelName, NULL, &gdm);
-        ReplaceDm(dm, gdm);
+        if (gdm) {
+            PetscCall(DMDestroy(&dm));
+            dm = gdm;
+        }
+//        PetscCall(DMDestroy(&gdm));
     }
 
+    /** Now that the mesh has been created, get access to the geometry */
     Vec faceGeomVec = NULL;  //!< Vector used to describe the entire face geom of the dm.  This is constant and does not depend upon region.
     Vec cellGeomVec = NULL;
-    DM faceDM;
-    const PetscScalar *faceGeomArray;
-    PetscFVFaceGeom *faceGeom;
-
-    PetscReal minCellRadius;
-    PetscCall(DMPlexGetMinRadius(dm,
-                                 &minCellRadius));                    //!< The minimum cell radius is used to scale the face stepping procedures
-    PetscCall(DMPlexComputeGeometryFVM(dm, &cellGeomVec, &faceGeomVec));  //!< Get the geometry vectors
+    PetscCall(DMPlexComputeGeometryFVM(dm, &cellGeomVec, &faceGeomVec));
+    DM faceDM, cellDM;
+    PetscCall(VecGetDM(cellGeomVec, &cellDM));
     PetscCall(VecGetDM(faceGeomVec, &faceDM));
+    const PetscScalar *cellGeomArray;
+    const PetscScalar *faceGeomArray;
+    PetscCall(VecGetArrayRead(cellGeomVec, &cellGeomArray));
     PetscCall(VecGetArrayRead(faceGeomVec, &faceGeomArray));
+    PetscFVFaceGeom *faceGeom;
 
     /** Get MPI information */
     PetscMPIInt rank;
@@ -83,18 +98,19 @@ int main(int argc, char **argv) {
     /** Initialize the particle at the center of the domain */
     PetscReal *coord;                    //!< Pointer to the coordinate field information
     PetscCall(DMSwarmGetField(radsearch, DMSwarmPICField_coor, NULL, NULL, (void **) &coord));
-    coord[dim * 0 + 0] = 0.5; //!< Set the coordinates of the particle to the center of the domain
-    coord[dim * 0 + 1] = 0.5;
+    coord[dim * 0 + 0] = 0.05; //!< Set the coordinates of the particle to the center of the domain
+    coord[dim * 0 + 1] = 0.05;
     //    coord[dim * 0 + 3] = 0;
     PetscCall(DMSwarmRestoreField(radsearch, DMSwarmPICField_coor, NULL, NULL, (void **) &coord));
 
+    /** Get information about the dm swarm to constrain the loop condition */
     PetscInt nglobalpoints = 0;
     PetscCall(
             DMSwarmGetSize(radsearch, &nglobalpoints));  //!< Calculate the number of particles that are in the domain.
     PetscCall(
             DMSwarmGetLocalSize(radsearch, &npoints));   //!< Calculate the number of particles that are in the domain.
 
-
+    /** Loop through the particle stepping routine while there are particles in the mesh */
     while (nglobalpoints != 0) {
         /** Now that the swarm has been created, get the fields back and read the properties of the particle out */
         PetscCall(DMSwarmGetField(radsearch, DMSwarmPICField_coor, NULL, NULL, (void **) &coord));
@@ -107,13 +123,11 @@ int main(int argc, char **argv) {
         PetscCall(VecSetSizes(intersect, PETSC_DECIDE, npoints * dim));  //!< Set size
         PetscCall(VecSetFromOptions(intersect));
         PetscInt i[3] = {0, 1, 2};                   //!< Establish the vector here so that it can be iterated.
+
+        /** Loop through each particle in this rank to get the cell index associated with its location */
         for (PetscInt ip = 0; ip <
                               npoints; ip++) {  //!< Iterate over the particles present in the domain. How to isolate the particles in this domain and iterate over them? If there are no
             //!< particles then pass out of initialization.
-
-            /** FIRST TAKE THIS LOCATION INTO THE RAYS VECTOR
-             * "I found a particle in my domain. Maybe it was just moved here and I've never seen it before.
-             * Therefore, my first step should be to add this location to the local rays vector. Then I can adjust the coordinates and migrate the particle." */
 
             /** Get the particle coordinates here and put them into the intersect */
             PetscReal position[3] = {(coord[dim * ip +
@@ -131,10 +145,7 @@ int main(int argc, char **argv) {
             i[2] += dim;
         }
 
-        /** Restore the field now that the position vector has been written to */
-        //        PetscCall(DMSwarmRestoreField(radsearch, DMSwarmPICField_coor, NULL, NULL, (void **) &coord));
-
-        /** Loop through points to try to get the cell that is sitting on that point*/
+        /** Get the cell index of the location that the particle is sitting on */
         PetscSF cellSF = NULL;  //!< PETSc object for setting up and managing the communication of certain entries of arrays and Vecs between MPI processes.
         PetscCall(DMLocatePoints(dm, intersect, DM_POINTLOCATION_NONE,
                                  &cellSF));  //!< Call DMLocatePoints here, all of the processes have to call it at once.
@@ -148,8 +159,13 @@ int main(int argc, char **argv) {
         PetscCall(PetscSFGetGraph(cellSF, NULL, &nFound, &point,
                                   &cell));  //!< Using this to get the petsc int cell number from the struct (SF)
 
+        /** Read out the information to console that is associated with this particle
+         * The particle will inhabit ghost boundary cells where there is no access to face geometry
+         * */
         for (PetscInt ip = 0; ip < npoints; ip++) {
+            /** Print some basic information to console for  */
             printf("Global Points: %i\n", nglobalpoints);
+            printf("Rank of Particle: %i\n", rank);
             printf("    %f %f\n", coord[0], coord[1]);
             if (nFound > -1 && cell[ip].index >= 0) { //!< Only for valid points
                 printf("        Cell Index: %i\n",
@@ -181,13 +197,13 @@ int main(int argc, char **argv) {
                     printf("                %f %f %f\n", faceGeom->normal[0], faceGeom->normal[1],
                            faceGeom->normal[2]); //!< If the face normal is empty then this indicates that the face geometry is invalid
                     if (faceGeom->normal[0] == 0 && faceGeom->normal[1] == 0 && faceGeom->normal[2] == 0) {
-                        printf("                Broken!");
+                        printf("                No face geometry!\n");
                     }
                 }
             }
             /** Now that all of the particle properties have been read, move the coordinates of the particle over some */
-            coord[dim * 0 + 0] += 0.005;
-            coord[dim * 0 + 1] += 0.005;
+            coord[dim * 0 + 0] += steplength;
+            coord[dim * 0 + 1] += steplength;
         }
         /** Restore the field now that the position vector has been written to */
         PetscCall(DMSwarmRestoreField(radsearch, DMSwarmPICField_coor, NULL, NULL, (void **) &coord));
@@ -209,22 +225,7 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-void ReplaceDm(DM originalDm, DM replaceDm) {
-        // copy over the name
-        const char *name;
-        PetscObjectName((PetscObject) originalDm);
-        PetscObjectGetName((PetscObject) originalDm, &name);
-        PetscObjectSetName((PetscObject) replaceDm, name);
 
-        // Copy over the options object
-        PetscOptions options;
-        PetscObjectGetOptions((PetscObject) originalDm, &options);
-        PetscObjectSetOptions((PetscObject) replaceDm, options);
-        ((DM_Plex *) (replaceDm)->data)->useHashLocation = ((DM_Plex *) originalDm->data)->useHashLocation;
-
-        DMDestroy(&originalDm);
-        originalDm = replaceDm;
-}
 
 /*TEST
 
