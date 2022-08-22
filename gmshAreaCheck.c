@@ -1,7 +1,6 @@
 static const char help[] = "Tests for mesh extrusion";
 
 #include <petscdmplex.h>
-#include <petsc/private/dmimpl.h>
 #include <petsc/private/dmpleximpl.h>
 
 
@@ -13,6 +12,12 @@ int main(int argc, char **argv) {
     PetscCall(DMCreate(PETSC_COMM_WORLD, &dm));
     PetscCall(DMSetType(dm, DMPLEX));
     PetscCall(DMSetFromOptions(dm));
+
+
+    // Determine the number of faces
+    PetscCall(DMViewFromOptions(dm, NULL, "-dm_init"));
+
+
 
     // compute the dm geometry
     Vec cellGeomVec, faceGeomVec;
@@ -162,7 +167,6 @@ int main(int argc, char **argv) {
 
 /*TEST
 
-   ./gmeshAreaCheck -dm_plex_filename /Users/mcgurn/scratch/petscTest/CombustionChamberV5_unrefinedv1.1.msh
 
-
+./gmeshAreaCheck -dm_plex_filename /Users/mcgurn/scratch/petscTest/CombustionChamberV5_unrefinedv1.1.msh -dm_view "hdf5:filterDm.h5" -dm_init "hdf5:dm.h5"
 TEST*/
