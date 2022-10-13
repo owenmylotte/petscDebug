@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 {
     PetscCall(PetscInitialize(&argc, &argv, NULL, help));
 
-    PetscInt dimensions  = 2;
+    PetscInt dimensions  = 3;
     PetscInt faces[3] = {560,80,80};
     PetscReal lower[3] = {0.0, 0.0, -0.0127};
     PetscReal upper[3] = { 0.165354, 0.027686, 0.0127};
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
     DM swarmDm;
     PetscCall(DMCreate(PETSC_COMM_WORLD, &swarmDm));
     PetscCall(DMSetType(swarmDm, DMSWARM));
-    PetscCall(DMSetDimension(swarmDm, 3));
+    PetscCall(DMSetDimension(swarmDm, dimensions));
 
     PetscCall(DMSwarmSetType(swarmDm, DMSWARM_PIC));
     PetscCall(DMSwarmSetCellDM(swarmDm, dm));
@@ -49,7 +49,6 @@ int main(int argc, char **argv)
     PetscCall(DMSwarmRegisterUserStructField(swarmDm, "virtual coord", sizeof(Virtualcoord)));
     PetscCall(DMSwarmFinalizeFieldRegister(swarmDm));
 
-    PetscCall(DMSwarmSetLocalSizes(swarmDm, 0, 0));
     PetscCall(DMSwarmSetLocalSizes(swarmDm, 0, 0));
 
     PetscCall(DMSwarmMigrate(swarmDm, PETSC_TRUE));
