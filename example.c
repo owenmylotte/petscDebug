@@ -45,21 +45,22 @@ int main(int argc, char **argv)
     PetscCall(DMSwarmSetCellDM(swarmDm, dm));
 
     PetscCall(DMSwarmRegisterUserStructField(swarmDm, "identifier", sizeof(Identifier)));
-    PetscCall(DMSwarmRegisterUserStructField(swarmDm, "virtual coord", sizeof(Virtualcoord)));
+    PetscCall(DMSwarmRegisterUserStructField(swarmDm, "virtualCoord", sizeof(Virtualcoord)));
     PetscCall(DMSwarmFinalizeFieldRegister(swarmDm));
 
     PetscCall(DMSwarmSetLocalSizes(swarmDm, 0, 0));
+    PetscCall(DMSetFromOptions(swarmDm));
 
     PetscReal* coord;                   //!< Pointer to the coordinate field information
     struct Virtualcoord* virtualcoord;  //!< Pointer to the primary (virtual) coordinate field information
     struct Identifier* identifier;      //!< Pointer to the ray identifier information
     PetscCall(DMSwarmGetField(swarmDm, DMSwarmPICField_coor, NULL, NULL, (void**)&coord));
     PetscCall(DMSwarmGetField(swarmDm, "identifier", NULL, NULL, (void**)&identifier));
-    PetscCall(DMSwarmGetField(swarmDm, "virtual coord", NULL, NULL, (void**)&virtualcoord));
+    PetscCall(DMSwarmGetField(swarmDm, "virtualCoord", NULL, NULL, (void**)&virtualcoord));
 
     PetscCall(DMSwarmRestoreField(swarmDm, DMSwarmPICField_coor, NULL, NULL, (void**)&coord));
     PetscCall(DMSwarmRestoreField(swarmDm, "identifier", NULL, NULL, (void**)&identifier));
-    PetscCall(DMSwarmRestoreField(swarmDm, "virtual coord", NULL, NULL, (void**)&virtualcoord));
+    PetscCall(DMSwarmRestoreField(swarmDm, "virtualCoord", NULL, NULL, (void**)&virtualcoord));
 
 
     PetscCall(DMSwarmMigrate(swarmDm, PETSC_TRUE));
