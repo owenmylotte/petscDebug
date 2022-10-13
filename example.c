@@ -1,24 +1,6 @@
-static const char help[] = "Extrudes the nozzle example";
+static const char help[] = "Simple Tests";
 
 #include <petsc.h>
-
-struct {
-    PetscInt origin;
-    PetscInt iCell;
-    PetscInt ntheta;
-    PetscInt nphi;
-    PetscInt nsegment;
-} Identifier;
-
-struct Virtualcoord {
-    PetscReal x;
-    PetscReal y;
-    PetscReal z;
-    PetscReal xdir;
-    PetscReal ydir;
-    PetscReal zdir;
-    PetscReal hhere;
-} Virtualcoord;
 
 int main(int argc, char **argv)
 {
