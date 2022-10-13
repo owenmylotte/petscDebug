@@ -38,3 +38,12 @@ target_link_libraries(subDmTest PUBLIC         PkgConfig::PETSc)
 
 add_executable(gmshAreaCheck gmshAreaCheck.c)
 target_link_libraries(gmshAreaCheck PUBLIC         PkgConfig::PETSc)
+
+add_executable(periodicMeshOutput periodicMeshOutput.c)
+target_link_libraries(periodicMeshOutput PUBLIC         PkgConfig::PETSc)
+
+
+
+# XDMF
+add_executable(xdmfGen xdmfGen.c)
+target_link_libraries(xdmfGen PUBLIC         PkgConfig::PETSc)
