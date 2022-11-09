@@ -120,3 +120,10 @@ int main(int argc, char **argv)
     PetscFinalize();
     return 0;
 }
+/**
+* Grows particles:
+ * -n 4 ./particlesInDm -dm_distribute_overlap 1 -dm_plex_hash_location true
+* Does not grow particles:
+ * -n 4 ./particlesInDm -dm_distribute_overlap 1 -dm_plex_hash_location false
+
+*/
