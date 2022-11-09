@@ -21,8 +21,11 @@ project(petscTest VERSION 0.8.30)
 # Load the Required 3rd Party Libaries
 pkg_check_modules(PETSc REQUIRED IMPORTED_TARGET GLOBAL PETSc)
 
-add_executable(example example.c)
-target_link_libraries(example PUBLIC         PkgConfig::PETSc)
+add_executable(meshMapping meshMapping.c)
+target_link_libraries(meshMapping PUBLIC         PkgConfig::PETSc)
+
+add_executable(particlesInDm particlesInDm.c)
+target_link_libraries(particlesInDm PUBLIC         PkgConfig::PETSc)
 #
 #add_executable(gMshDistribute gmshDistribute.c)
 #target_link_libraries(gMshDistribute PUBLIC         PkgConfig::PETSc)
@@ -47,3 +50,17 @@ target_link_libraries(example PUBLIC         PkgConfig::PETSc)
 ## XDMF
 #add_executable(xdmfGen xdmfGen.c)
 #target_link_libraries(xdmfGen PUBLIC         PkgConfig::PETSc)
+
+# Include system specific hacks
+#if ("${APPLE}" AND (${CMAKE_C_COMPILER_ID} STREQUAL "AppleClang"))
+    # check for homebrew gfortran and get path for libstdc++.dylib
+    execute_process(COMMAND gfortran --print-file-name=libstdc++.dylib OUTPUT_VARIABLE LIBSTDCPP_PATH)
+
+    # convert to an absolute path and get the directory
+    get_filename_component(LIBSTDCPP_PATH ${LIBSTDCPP_PATH} ABSOLUTE)
+    get_filename_component(LIBSTDCPP_PATH ${LIBSTDCPP_PATH} DIRECTORY)
+
+    target_link_directories(particlesInDm PUBLIC ${LIBSTDCPP_PATH})
+    target_link_directories(meshMapping PUBLIC ${LIBSTDCPP_PATH})
+
+#endif ()
