@@ -24,6 +24,9 @@ pkg_check_modules(PETSc REQUIRED IMPORTED_TARGET GLOBAL PETSc)
 add_executable(particleFV particleFV.c)
 target_link_libraries(particleFV PUBLIC         PkgConfig::PETSc)
 
+add_executable(swarmExample swarmExample.c)
+target_link_libraries(swarmExample PUBLIC         PkgConfig::PETSc)
+
 add_executable(gMshDistribute gmshDistribute.c)
 target_link_libraries(gMshDistribute PUBLIC         PkgConfig::PETSc)
 

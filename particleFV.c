@@ -7,12 +7,11 @@ static const char help[] = "Testing particle access to face geometry in parallel
 #include <petsc/private/dmpleximpl.h>
 #include "stdbool.h"
 
-//void ReplaceDm(DM *originalDm, DM *replaceDm);
-
 int main(int argc, char **argv) {
     sleep(10);
 
     /** When run with -n 4, the face geometry of several ghost labelled cells is blank */
+
     bool ghostboundary = true; //!< Whether or not the mesh will be created with ghost cells
     bool ghostpartition = true;
     PetscReal steplength = 0.05; //!< How far the particle will be stepped on each iteration
