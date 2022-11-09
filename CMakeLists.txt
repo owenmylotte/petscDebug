@@ -26,6 +26,10 @@ target_link_libraries(meshMapping PUBLIC         PkgConfig::PETSc)
 
 add_executable(particlesInDm particlesInDm.c)
 target_link_libraries(particlesInDm PUBLIC         PkgConfig::PETSc)
+
+add_executable(dmLocate dmLocate.c)
+target_link_libraries(dmLocate PUBLIC         PkgConfig::PETSc)
+
 #
 #add_executable(gMshDistribute gmshDistribute.c)
 #target_link_libraries(gMshDistribute PUBLIC         PkgConfig::PETSc)
@@ -62,5 +66,6 @@ target_link_libraries(particlesInDm PUBLIC         PkgConfig::PETSc)
 
     target_link_directories(particlesInDm PUBLIC ${LIBSTDCPP_PATH})
     target_link_directories(meshMapping PUBLIC ${LIBSTDCPP_PATH})
+    target_link_directories(dmLocate PUBLIC ${LIBSTDCPP_PATH})
 
 #endif ()
