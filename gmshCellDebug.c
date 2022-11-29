@@ -7,7 +7,7 @@ static const char help[] = "Tests DMPlex gmsh compatability";
 int main(int argc, char **argv) {
     DM dm, dma = NULL, dmDist = NULL;
 
-    PetscInt dim = 3;
+    PetscInt dim = 2;
 
     PetscCall(PetscInitialize(&argc, &argv, NULL, help));
 
@@ -46,16 +46,16 @@ int main(int argc, char **argv) {
         /** At this point the centroid pointer should contain a valid cell location */
 
         Vec intersect;
-        PetscCall(VecCreate(PETSC_COMM_SELF, &intersect));  //!< Instantiates the vector
-        PetscCall(VecSetBlockSize(intersect, dim));
-        PetscCall(VecSetSizes(intersect, PETSC_DECIDE, dim));  //!< Set size
+        PetscCall(VecCreate(PETSC_COMM_SELF, &intersect));  //! Instantiates the vector
+        PetscCall(VecSetBlockSize(intersect, dim)); //! Set the block size for each point location
+        PetscCall(VecSetSizes(intersect, PETSC_DECIDE, dim));  //! Set size
         PetscCall(VecSetFromOptions(intersect));
         PetscInt i[3] = {0, 1, 2};                   //!< Establish the vector here so that it can be iterated.
 
         /** Get the centroid coordinates and put them into the vector */
-        PetscReal position[3] = {(centroid[dim + 0]),   //!< x component
-                                 (centroid[dim + 1]),   //!< y component
-                                 (centroid[dim + 2])};  //!< z component
+        PetscReal position[3] = {(centroid[0]),   //!< x component
+                                 (centroid[1]),   //!< y component
+                                 (centroid[2])};  //!< z component
 
         /** This block creates the vector pointing to the cell whose index will be stored during the current loop */
         VecSetValues(intersect, dim, i, position,
@@ -66,15 +66,16 @@ int main(int argc, char **argv) {
         PetscCall(DMLocatePoints(dm, intersect, DM_POINTLOCATION_NONE, &cellSF));
 
         /** Get the cells that were found from DMLocatePoints */
-        const PetscSFNode *cell;
         PetscInt nFound;
-        const PetscInt *found;
+        const PetscSFNode *cell = PETSC_NULLPTR;
+        const PetscInt *found = PETSC_NULLPTR;
         PetscSFGetGraph(cellSF, NULL, &nFound, &found, &cell);
 
         if (nFound == 0)
             printf("No cell was found at centroid! %i %f %f %f\n", iCell, centroid[0], centroid[1],
                    centroid[2]);
-        if (nFound == 1 && cell[0].index != iCell) printf("Output index is not equal to input! %i %i\n", iCell, cell[0].index);
+        if (nFound == 1 && cell[0].index != iCell)
+            printf("Output index is not equal to input! %i %i\n", iCell, cell[0].index);
 
         /** Cleanup from DMLocatePoints */
         PetscCall(VecDestroy(&intersect));
