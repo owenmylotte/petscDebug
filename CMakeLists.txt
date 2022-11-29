@@ -21,22 +21,14 @@ project(petscTest VERSION 0.8.30)
 # Load the Required 3rd Party Libaries
 pkg_check_modules(PETSc REQUIRED IMPORTED_TARGET GLOBAL PETSc)
 
-add_executable(example example.c)
-target_link_libraries(example PUBLIC         PkgConfig::PETSc)
+add_executable(gmshCellDebug gmshCellDebug.c)
+target_link_libraries(gmshCellDebug PUBLIC         PkgConfig::PETSc)
 
-add_executable(particlesInDm particlesInDm.c)
-target_link_libraries(particlesInDm PUBLIC         PkgConfig::PETSc)
-
-add_executable(dmLocate dmLocate.c)
-target_link_libraries(dmLocate PUBLIC         PkgConfig::PETSc)
-
-add_executable(petscSf petscSf.c)
-target_link_libraries(petscSf PUBLIC         PkgConfig::PETSc)
-
-add_executable(petscSfPlayground petscSfPlayground.cpp)
-target_link_libraries(petscSfPlayground PUBLIC         PkgConfig::PETSc)
-
-
+#add_executable(meshMapping meshMapping.c)
+#target_link_libraries(meshMapping PUBLIC         PkgConfig::PETSc)
+#
+#add_executable(particlesInDm particlesInDm.c)
+#target_link_libraries(particlesInDm PUBLIC         PkgConfig::PETSc)
 #
 #add_executable(gMshDistribute gmshDistribute.c)
 #target_link_libraries(gMshDistribute PUBLIC         PkgConfig::PETSc)
@@ -71,10 +63,7 @@ target_link_libraries(petscSfPlayground PUBLIC         PkgConfig::PETSc)
     get_filename_component(LIBSTDCPP_PATH ${LIBSTDCPP_PATH} ABSOLUTE)
     get_filename_component(LIBSTDCPP_PATH ${LIBSTDCPP_PATH} DIRECTORY)
 
-    target_link_directories(particlesInDm PUBLIC ${LIBSTDCPP_PATH})
-    target_link_directories(example PUBLIC ${LIBSTDCPP_PATH})
-    target_link_directories(dmLocate PUBLIC ${LIBSTDCPP_PATH})
-    target_link_directories(petscSf PUBLIC ${LIBSTDCPP_PATH})
-    target_link_directories(petscSfPlayground PUBLIC ${LIBSTDCPP_PATH})
+#    target_link_directories(particlesInDm PUBLIC ${LIBSTDCPP_PATH})
+    target_link_directories(gmshCellDebug PUBLIC ${LIBSTDCPP_PATH})
 
 #endif ()
