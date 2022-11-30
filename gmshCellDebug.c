@@ -1,4 +1,4 @@
-static const char help[] = "Tests DMPlex gmsh compatability";
+static const char help[] = "Reproducer of bug in gMsh and hash location interaction. Bug disappears with hash location off.";
 
 #include <petscdmplex.h>
 #include "petscdm.h"
@@ -14,7 +14,6 @@ int main(int argc, char **argv) {
     PetscCall(DMSetType(dm, DMPLEX));
     PetscCall(DMSetFromOptions(dm));
 
-    PetscCall(PetscOptionsSetValue(NULL, "-dm_plex_hash_location", "true")); //! Independent of this
     PetscCall(DMViewFromOptions(dm, NULL, "-dm_view"));
 
     /** Get the dimensionality of the mesh */
@@ -113,8 +112,8 @@ int main(int argc, char **argv) {
 
 /*TEST
 
--dm_plex_filename /path/to/petscDebug/R1_5m.msh -dm_view "hdf5:dm.h5" -dm_adapt_view "hdf5:adaptDm.h5"
--dm_plex_filename /path/to/petscDebug/radEqTest.msh -dm_view "hdf5:dm.h5" -dm_adapt_view "hdf5:adaptDm.h5"
--dm_plex_filename /path/to/petscDebug/CombustionChamberV5_unrefinedv1.1.msh -dm_view "hdf5:dm.h5" -dm_adapt_view "hdf5:adaptDm.h5"
+-dm_plex_filename /path/to/petscDebug/R1_5m.msh -dm_view "hdf5:dm.h5" -dm_adapt_view "hdf5:adaptDm.h5" -dm_plex_hash_location "true"
+-dm_plex_filename /path/to/petscDebug/radEqTest.msh -dm_view "hdf5:dm.h5" -dm_adapt_view "hdf5:adaptDm.h5" -dm_plex_hash_location "true"
+-dm_plex_filename /path/to/petscDebug/CombustionChamberV5_unrefinedv1.1.msh -dm_view "hdf5:dm.h5" -dm_adapt_view "hdf5:adaptDm.h5" -dm_plex_hash_location "true"
 
 TEST*/
