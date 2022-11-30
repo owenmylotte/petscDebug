@@ -3,11 +3,11 @@ static const char help[] = "Tests DMPlex gmsh compatability";
 #include <petscdmplex.h>
 #include "petscdm.h"
 #include <petsc.h>
+#include <math.h>
+#include <stdlib.h>
 
 int main(int argc, char **argv) {
     DM dm, dma = NULL, dmDist = NULL;
-
-    PetscInt dim = 2;
 
     PetscCall(PetscInitialize(&argc, &argv, NULL, help));
 
@@ -15,7 +15,14 @@ int main(int argc, char **argv) {
     PetscCall(DMSetType(dm, DMPLEX));
     PetscCall(DMSetFromOptions(dm));
 
+    PetscCall(PetscOptionsSetValue(NULL, "-dm_plex_hash_location", "false")); //! Independent of this
     PetscCall(DMViewFromOptions(dm, NULL, "-dm_view"));
+
+    /** Get the dimensionality of the mesh and the minimum cell radius */
+    PetscInt dim = 0;
+    PetscReal minCellRadius;
+    PetscCall(DMGetDimension(dm, &dim));
+    PetscCall(DMPlexGetMinRadius(dm, &minCellRadius));
 
     /** Get the indexes of all of the cells in the mesh
      * These indexes can be read to produce valid centroid locations
@@ -32,10 +39,20 @@ int main(int argc, char **argv) {
     if (!allPointIS) PetscCall(DMGetStratumIS(dm, "depth", depth, &allPointIS));
     PetscCall(ISGetPointRange(allPointIS, &start, &end, &points));
 
+    PetscInt nPoints = (end - start);
+
+    /** Set up the vector to fill with points for the DMLocatePoints call */
+    Vec intersect;
+    PetscCall(VecCreate(PETSC_COMM_SELF, &intersect));  //! Instantiates the vector
+    PetscCall(VecSetBlockSize(intersect, dim)); //! Set the block size for each point location
+    PetscCall(VecSetSizes(intersect, PETSC_DECIDE, nPoints * dim));  //! Set size
+    PetscCall(VecSetFromOptions(intersect));
+    PetscInt i[3] = {0, 1, 2}; //!< Establish the vector here so that it can be iterated.
+
     /** Iterate through all of the cells in the mesh
      * Get the centroid of each cell in the mesh
      * Use DMLocatePoints to get the cell index back out of that location
-     * If DMLocatePoints fails to find a cell in that location, throw an error.
+     * If DMLocatePoints fails to find a cell in that location, something is broken.
      * */
     for (PetscInt c = start; c < end; ++c) {
         const PetscInt iCell = points ? points[c] : c; //! Represents the cell index
@@ -43,46 +60,49 @@ int main(int argc, char **argv) {
         /** Get the centroid of the cell at this index */
         PetscCall(DMPlexComputeCellGeometryFVM(dm, iCell, PETSC_NULLPTR, centroid, PETSC_NULLPTR));
 
-        /** At this point the centroid pointer should contain a valid cell location */
-
-        Vec intersect;
-        PetscCall(VecCreate(PETSC_COMM_SELF, &intersect));  //! Instantiates the vector
-        PetscCall(VecSetBlockSize(intersect, dim)); //! Set the block size for each point location
-        PetscCall(VecSetSizes(intersect, PETSC_DECIDE, dim));  //! Set size
-        PetscCall(VecSetFromOptions(intersect));
-        PetscInt i[3] = {0, 1, 2};                   //!< Establish the vector here so that it can be iterated.
-
-        /** Get the centroid coordinates and put them into the vector */
-        PetscReal position[3] = {(centroid[0]),   //!< x component
-                                 (centroid[1]),   //!< y component
-                                 (centroid[2])};  //!< z component
+        /** At this point the centroid pointer should contain a valid cell location
+         * Get the centroid coordinates and put them into the vector */
+        PetscReal position[3] = {
+                (centroid[0]),   //!< x component
+                (centroid[1]),   //!< y component
+                (centroid[2])};  //!< z component
 
         /** This block creates the vector pointing to the cell whose index will be stored during the current loop */
         VecSetValues(intersect, dim, i, position,
                      INSERT_VALUES);  //!< Actually input the values of the vector (There are 'dim' values to input)
+        i[0] += dim; //!< Iterate the index by the number of dimensions so that the DMLocatePoints function can be called collectively.
+        i[1] += dim;
+        i[2] += dim;
+    }
 
-        /** Loop through points to try to get the cell that is sitting on that point */
-        PetscSF cellSF = PETSC_NULLPTR;
-        PetscCall(DMLocatePoints(dm, intersect, DM_POINTLOCATION_NONE, &cellSF));
+    /**Get the cells sitting on those points */
+    PetscSF cellSF = PETSC_NULLPTR;
+    PetscCall(DMLocatePoints(dm, intersect, DM_POINTLOCATION_NONE, &cellSF));
 
-        /** Get the cells that were found from DMLocatePoints */
-        PetscInt nFound;
-        const PetscSFNode *cell = PETSC_NULLPTR;
-        const PetscInt *found = PETSC_NULLPTR;
-        PetscSFGetGraph(cellSF, NULL, &nFound, &found, &cell);
+    /** Get the cells that were found from DMLocatePoints */
+    PetscInt nFound;
+    const PetscSFNode *cell = PETSC_NULLPTR;
+    const PetscInt *found = PETSC_NULLPTR;
+    PetscSFGetGraph(cellSF, NULL, &nFound, &found, &cell);
 
-        if (nFound == 0)
-            printf("No cell was found at centroid! %i %f %f %f\n", iCell, centroid[0], centroid[1],
-                   centroid[2]);
-        if (nFound == 1 && cell[0].index != iCell)
-            printf("Output index is not equal to input! %i %i\n", iCell, cell[0].index);
+    if (nFound != nPoints) printf("One or more cell locations were invalid!\n");
 
-        /** Cleanup from DMLocatePoints */
-        PetscCall(VecDestroy(&intersect));
-        PetscCall(PetscSFDestroy(&cellSF));
+    PetscInt iter = 0;
+    for (PetscInt c = start; c < end; ++c) {
+        const PetscInt iCell = points ? points[c] : c; //! Represents the cell index
+
+        PetscReal centroid[3];
+        /** Get the centroid of the cell at this index */
+        PetscCall(DMPlexComputeCellGeometryFVM(dm, iCell, PETSC_NULLPTR, centroid, PETSC_NULLPTR));
+
+        if (cell[iter].index != iCell)
+            printf("Output index is not equal to input! %i %i\n", iCell, cell[iter].index);
+        iter = iter + 1;
     }
 
     /** Clean up the objects */
+    PetscCall(VecDestroy(&intersect));
+    PetscCall(PetscSFDestroy(&cellSF));
     PetscCall(ISDestroy(&allPointIS));
     PetscCall(DMDestroy(&dm));
     PetscCall(DMDestroy(&dma));

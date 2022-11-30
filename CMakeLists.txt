@@ -22,7 +22,7 @@ project(petscTest VERSION 0.8.30)
 pkg_check_modules(PETSc REQUIRED IMPORTED_TARGET GLOBAL PETSc)
 
 add_executable(gmshCellDebug gmshCellDebug.c)
-target_link_libraries(gmshCellDebug PUBLIC         PkgConfig::PETSc)
+target_link_libraries(gmshCellDebug PUBLIC         PkgConfig::PETSc m)
 
 #add_executable(meshMapping meshMapping.c)
 #target_link_libraries(meshMapping PUBLIC         PkgConfig::PETSc)
