@@ -27,8 +27,8 @@ target_link_libraries(gmshCellDebug PUBLIC         PkgConfig::PETSc m)
 #add_executable(meshMapping meshMapping.c)
 #target_link_libraries(meshMapping PUBLIC         PkgConfig::PETSc)
 #
-#add_executable(particlesInDm particlesInDm.c)
-#target_link_libraries(particlesInDm PUBLIC         PkgConfig::PETSc)
+add_executable(vanishingParticles vanishingParticles.c)
+target_link_libraries(vanishingParticles PUBLIC         PkgConfig::PETSc)
 #
 #add_executable(gMshDistribute gmshDistribute.c)
 #target_link_libraries(gMshDistribute PUBLIC         PkgConfig::PETSc)

@@ -112,7 +112,6 @@ int main(int argc, char **argv) {
 
 /*TEST
 
--dm_plex_filename /path/to/petscDebug/R1_5m.msh -dm_view "hdf5:dm.h5" -dm_adapt_view "hdf5:adaptDm.h5" -dm_plex_hash_location "true"
 -dm_plex_filename /path/to/petscDebug/radEqTest.msh -dm_view "hdf5:dm.h5" -dm_adapt_view "hdf5:adaptDm.h5" -dm_plex_hash_location "true"
 -dm_plex_filename /path/to/petscDebug/CombustionChamberV5_unrefinedv1.1.msh -dm_view "hdf5:dm.h5" -dm_adapt_view "hdf5:adaptDm.h5" -dm_plex_hash_location "true"
 
