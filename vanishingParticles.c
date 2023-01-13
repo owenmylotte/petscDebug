@@ -2,7 +2,6 @@ static const char help[] = "Particle Disappearance Reproducer";
 
 #include <petsc.h>
 #include <stdio.h>
-#include <math.h>
 
 struct Direction {
     PetscReal xdir, ydir, zdir; //! Represent the travel direction of each particle
@@ -140,7 +139,7 @@ int main(int argc, char **argv) {
         for (PetscInt p = 0; p < npLocal; ++p) {
             for (PetscInt d = 0; d < dimensions; ++d) {
                 if ((coords[p * dimensions + d] >
-                     upper[d]) || (coords[p * dimensions + d] < lower[d])) {
+                     1.0) || (coords[p * dimensions + d] < 0.0)) {
                     switch (d) {
                         case 0:
                             direction->xdir *= -1;
