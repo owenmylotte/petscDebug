@@ -124,9 +124,10 @@ int main(int argc, char **argv) {
                     printf("Rank %" PetscInt_FMT " Particles: %"  PetscInt_FMT "\n", (PetscInt) rank, npLocal);
                 }
                 for (PetscInt p = 0; p < npLocal; p++) {
-                    printf("\t%"PetscInt_FMT ": %f, %f, %f\n", cellid[p], coords[p * dimensions],
+                    printf("\t%"PetscInt_FMT ": %f, %f, %f, %f, %f, %f\n", cellid[p], coords[p * dimensions],
                            dimensions > 1 ? coords[p * dimensions + 1] : 0.0,
-                           dimensions > 2 ? coords[p * dimensions + 2] : 0.0);
+                           dimensions > 2 ? coords[p * dimensions + 2] : 0.0, direction[p].xdir, direction[p].ydir,
+                           direction[p].zdir);
                 }
             }
             MPI_Barrier(PETSC_COMM_WORLD);
@@ -138,15 +139,24 @@ int main(int argc, char **argv) {
          */
         for (PetscInt p = 0; p < npLocal; ++p) {
             for (PetscInt d = 0; d < dimensions; ++d) {
-                if ((coords[p * dimensions + d] >
-                     1.0) || (coords[p * dimensions + d] < 0.0)) {
+                if (coords[p * dimensions + d] > 1.0) {
                     switch (d) {
                         case 0:
-                            direction->xdir *= -1;
+                            direction[p].xdir = -1 * PetscAbsReal(direction[p].xdir);
                         case 1:
-                            direction->ydir *= -1;
+                            direction[p].ydir = -1 * PetscAbsReal(direction[p].ydir);
                         case 2:
-                            direction->zdir *= -1;
+                            direction[p].zdir = -1 * PetscAbsReal(direction[p].zdir);
+                    }
+                }
+                if (coords[p * dimensions + d] < 0.0) {
+                    switch (d) {
+                        case 0:
+                            direction[p].xdir = PetscAbsReal(direction[p].xdir);
+                        case 1:
+                            direction[p].ydir = PetscAbsReal(direction[p].ydir);
+                        case 2:
+                            direction[p].zdir = PetscAbsReal(direction[p].zdir);
                     }
                 }
             }
@@ -154,9 +164,9 @@ int main(int argc, char **argv) {
 
         // Move
         for (PetscInt p = 0; p < npLocal; ++p) {
-            coords[p * dimensions + 0] += minCellRadius * direction->xdir;
-            coords[p * dimensions + 1] += minCellRadius * direction->ydir;
-            coords[p * dimensions + 2] += minCellRadius * direction->zdir;
+            coords[p * dimensions + 0] += minCellRadius * direction[p].xdir;
+            coords[p * dimensions + 1] += minCellRadius * direction[p].ydir;
+            coords[p * dimensions + 2] += minCellRadius * direction[p].zdir;
         }
 
         PetscCall(DMSwarmRestoreField(swarmDm, DMSwarmPICField_coor, NULL, NULL, (void **) &coords));
