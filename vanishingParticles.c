@@ -12,14 +12,6 @@ double r2() {
 }
 
 void rdir(struct Direction *dir) {
-
-//    PetscReal theta = r2() * PETSC_PI;
-//    PetscReal phi = r2() * 2 * PETSC_PI;
-
-//    dir->xdir = (sin(theta) * cos(phi));
-//    dir->ydir = (sin(theta) * sin(phi));
-//    dir->zdir = (cos(theta));
-
     dir->xdir = r2();
     dir->ydir = r2();
     dir->zdir = r2();
@@ -188,9 +180,12 @@ int main(int argc, char **argv) {
     return 0;
 }
 /**
-* Grows particles:
- * -n 4 ./particlesInDm -dm_distribute_overlap 1 -dm_plex_hash_location true
-* Does not grow particles:
- * -n 4 ./particlesInDm -dm_distribute_overlap 1 -dm_plex_hash_location false
-
+* Conserves particles:
+*       -n 1 ./vanishingParticles -dm_distribute_overlap 1 -dm_plex_hash_location true
+* Does not conserve particles:
+*       -n 10 ./vanishingParticles -dm_distribute_overlap 1 -dm_plex_hash_location true
+* Does not conserve particles:
+*       -n 10 ./vanishingParticles -dm_distribute_overlap 1 -dm_plex_hash_location false
+* Does not conserve particles:
+*       -n 10 ./vanishingParticles -dm_distribute_overlap 0 -dm_plex_hash_location true
 */
