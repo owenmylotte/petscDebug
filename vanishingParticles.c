@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
 
         rdir(&direction[p]); //! Set a random direction for the particles as they are initialized.
 
-        cellid[p] = 0;
+        cellid[p] = p;
     }
     PetscCall(DMSwarmRestoreField(swarmDm, DMSwarmPICField_coor, NULL, NULL, (void **) &coords));
     PetscCall(DMSwarmRestoreField(swarmDm, DMSwarmPICField_cellid, NULL, NULL, (void **) &cellid));
@@ -103,8 +103,6 @@ int main(int argc, char **argv) {
         PetscPrintf(PETSC_COMM_WORLD, "########################################################################\n");
         PetscPrintf(PETSC_COMM_WORLD, "Global Particles %" PetscInt_FMT " at Migration %"  PetscInt_FMT "\n", npGlobal,
                     migration++);
-
-        //        DMViewFromOptions(swarmDm, NULL, "-dm_view" );
 
         PetscCall(DMSwarmGetField(swarmDm, DMSwarmPICField_coor, NULL, NULL, (void **) &coords));
         PetscCall(DMSwarmGetField(swarmDm, DMSwarmField_pid, NULL, NULL, (void **) &cellid));
@@ -171,7 +169,6 @@ int main(int argc, char **argv) {
         maxParticles = PetscMax(maxParticles, npGlobal);
     }
     PetscPrintf(PETSC_COMM_WORLD, "Max Global Particles %" PetscInt_FMT "\n", maxParticles);
-    // TODO: Check whether there are any particle identifiers which are listed more than once. Also make sure that the number of particles stay constant.
 
     PetscCall(DMDestroy(&swarmDm));
     PetscCall(DMDestroy(&dm));
