@@ -6,6 +6,10 @@ if (NOT DEFINED CMAKE_C_COMPILER)
     # Set the compilers based upon the PETSc package
     pkg_get_variable(PETSC_C_COMPILER PETSc ccompiler)
     set(CMAKE_C_COMPILER ${PETSC_C_COMPILER})
+
+    pkg_get_variable(PETSC_C_FLAGS PETSc cflags_extra)
+    string (REPLACE ";" " " PETSC_C_FLAGS_STR "${PETSC_C_FLAGS}")
+    set(CMAKE_C_FLAGS_INIT ${PETSC_C_FLAGS_STR})
 endif ()
 
 # Check if a CXX compiler is explicitly stated
@@ -13,6 +17,10 @@ if (NOT DEFINED CMAKE_CXX_COMPILER)
     # Set the compilers based upon the PETSc package
     pkg_get_variable(PETSC_CXX_COMPILER PETSc cxxcompiler)
     set(CMAKE_CXX_COMPILER ${PETSC_CXX_COMPILER})
+
+    pkg_get_variable(PETSC_CXX_FLAGS PETSc cxxflags_extra)
+    string (REPLACE ";" " " PETSC_CXX_FLAGS_STR "${PETSC_CXX_FLAGS}")
+    set(CMAKE_CXX_FLAGS_INIT ${PETSC_CXX_FLAGS_STR})
 endif ()
 
 # Set the project details
@@ -35,6 +43,9 @@ target_link_libraries(petscSf PUBLIC         PkgConfig::PETSc)
 
 add_executable(petscSfPlayground petscSfPlayground.cpp)
 target_link_libraries(petscSfPlayground PUBLIC         PkgConfig::PETSc)
+
+add_executable(gmshVolumeCheck gmshVolumeCheck.c)
+target_link_libraries(gmshVolumeCheck PUBLIC         PkgConfig::PETSc)
 
 
 #
@@ -75,6 +86,8 @@ target_link_libraries(petscSfPlayground PUBLIC         PkgConfig::PETSc)
     target_link_directories(example PUBLIC ${LIBSTDCPP_PATH})
     target_link_directories(dmLocate PUBLIC ${LIBSTDCPP_PATH})
     target_link_directories(petscSf PUBLIC ${LIBSTDCPP_PATH})
-    target_link_directories(petscSfPlayground PUBLIC ${LIBSTDCPP_PATH})
+    target_link_directories(gmshVolumeCheck PUBLIC ${LIBSTDCPP_PATH})
+target_link_directories(petscSfPlayground PUBLIC ${LIBSTDCPP_PATH})
+
 
 #endif ()
