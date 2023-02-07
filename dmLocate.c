@@ -6,9 +6,9 @@ int main(int argc, char **argv) {
     PetscCall(PetscInitialize(&argc, &argv, NULL, help));
 
     PetscInt dimensions = 3;
-    PetscInt faces[3] = {114, 19, 19};
-    PetscReal lower[3] = {-0.001476375, -0.0016285882352941176, -0.014194117647058822};
-    PetscReal upper[3] = {0.166830375, 0.029314588235294117, 0.014194117647058822};
+    PetscInt faces[3] = {5, 5, 5};
+    PetscReal lower[3] = {0.0, 0.0, 0.0};
+    PetscReal upper[3] = {1.0, 1.0, 1.0};
     DMBoundaryType bc[3] = {DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, DM_BOUNDARY_NONE};
 
     DM dm;
@@ -16,13 +16,12 @@ int main(int argc, char **argv) {
     PetscCall(DMSetFromOptions(dm));
 
     // create any ghost cells that are needed
-    DM dmDist;
+    DM dmDist = NULL;
     PetscCall(DMPlexDistribute(dm, 3, NULL, &dmDist));
     if(dmDist){
         DMDestroy(&dm);
         dm = dmDist;
     }
-    PetscCall(DMSetFromOptions(dmDist));
 
     // get the rank
     int rank, size;
@@ -35,7 +34,7 @@ int main(int argc, char **argv) {
     PetscCall(VecSetSizes(coords, 1 * dimensions, PETSC_DECIDE));
     PetscCall(VecSetFromOptions(coords));
     PetscInt i[3] = {0, 1, 2};
-    PetscReal position[3] = {0.0295275, 0.0147285975547364, -0.000132666729807727};
+    PetscReal position[3] = {.2, .3, .4};
 
     VecSetValues(coords, dimensions, i, position, INSERT_VALUES);
     VecAssemblyBegin(coords);
