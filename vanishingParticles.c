@@ -24,11 +24,15 @@ int main(int argc, char **argv) {
 
     PetscInt dimensions = 3;
 
+    /// Both cases work well when run with -dm_plex_hash_location false
+
+    /// This mesh loses particles when -dm_plex_hash_location true
     PetscInt faces[3] = {105, 15, 15};
     PetscReal lower[3] = {0.0, 0.0, -0.0127};
-    PetscReal upper[3] = { 0.1, 0.0254, 0.0127 };
+    PetscReal upper[3] = {0.1, 0.0254, 0.0127};
     DMBoundaryType bc[3] = {DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, DM_BOUNDARY_NONE};
 
+    /// This mesh works well
 //    PetscInt faces[3] = {50, 50, 50};
 //    PetscReal lower[3] = {-0.1, -0.1, -0.1};
 //    PetscReal upper[3] = {1.1, 1.1, 1.1};
@@ -77,7 +81,8 @@ int main(int argc, char **argv) {
     for (PetscInt p = 0; p < np; ++p) {
         for (PetscInt d = 0; d < dimensions; ++d) {
             coords[p * dimensions +
-                   d] = (r2() * (upper[d] - lower[d]) + lower[d]); //! Set the initial coordinates of the particles to a random number between zero and one.
+                   d] = (r2() * (upper[d] - lower[d]) +
+                         lower[d]); //! Set the initial coordinates of the particles to a random number between zero and one.
         }
 
         rdir(&direction[p]); //! Set a random direction for the particles as they are initialized.
@@ -182,13 +187,3 @@ int main(int argc, char **argv) {
     PetscFinalize();
     return 0;
 }
-/**
-* Conserves particles:
-*       -n 1 ./vanishingParticles -dm_distribute_overlap 1 -dm_plex_hash_location true
-* Does not conserve particles:
-*       -n 10 ./vanishingParticles -dm_distribute_overlap 1 -dm_plex_hash_location true
-* Does not conserve particles:
-*       -n 10 ./vanishingParticles -dm_distribute_overlap 1 -dm_plex_hash_location false
-* Does not conserve particles:
-*       -n 10 ./vanishingParticles -dm_distribute_overlap 0 -dm_plex_hash_location true
-*/
