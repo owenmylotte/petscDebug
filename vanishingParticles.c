@@ -23,10 +23,16 @@ int main(int argc, char **argv) {
     PetscCall(PetscInitialize(&argc, &argv, NULL, help));
 
     PetscInt dimensions = 3;
-    PetscInt faces[3] = {50, 50, 50};
-    PetscReal lower[3] = {-0.1, -0.1, -0.1};
-    PetscReal upper[3] = {1.1, 1.1, 1.1};
+
+    PetscInt faces[3] = {105, 15, 15};
+    PetscReal lower[3] = {0.0, 0.0, -0.0127};
+    PetscReal upper[3] = { 0.1, 0.0254, 0.0127 };
     DMBoundaryType bc[3] = {DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, DM_BOUNDARY_NONE};
+
+//    PetscInt faces[3] = {50, 50, 50};
+//    PetscReal lower[3] = {-0.1, -0.1, -0.1};
+//    PetscReal upper[3] = {1.1, 1.1, 1.1};
+//    DMBoundaryType bc[3] = {DM_BOUNDARY_NONE, DM_BOUNDARY_NONE, DM_BOUNDARY_NONE};
 
     DM dm;
     PetscCall(DMPlexCreateBoxMesh(PETSC_COMM_WORLD, dimensions, PETSC_FALSE, faces, lower, upper, bc, PETSC_TRUE, &dm));
@@ -71,7 +77,7 @@ int main(int argc, char **argv) {
     for (PetscInt p = 0; p < np; ++p) {
         for (PetscInt d = 0; d < dimensions; ++d) {
             coords[p * dimensions +
-                   d] = r2(); //! Set the initial coordinates of the particles to a random number between zero and one.
+                   d] = (r2() * (upper[d] - lower[d]) + lower[d]); //! Set the initial coordinates of the particles to a random number between zero and one.
         }
 
         rdir(&direction[p]); //! Set a random direction for the particles as they are initialized.
@@ -129,7 +135,7 @@ int main(int argc, char **argv) {
          */
         for (PetscInt p = 0; p < npLocal; ++p) {
             for (PetscInt d = 0; d < dimensions; ++d) {
-                if (coords[p * dimensions + d] > 1.0) {
+                if (coords[p * dimensions + d] > (upper[d] - minCellRadius)) {
                     switch (d) {
                         case 0:
                             direction[p].xdir = -1 * PetscAbsReal(direction[p].xdir);
@@ -139,7 +145,7 @@ int main(int argc, char **argv) {
                             direction[p].zdir = -1 * PetscAbsReal(direction[p].zdir);
                     }
                 }
-                if (coords[p * dimensions + d] < 0.0) {
+                if (coords[p * dimensions + d] < (lower[d] + minCellRadius)) {
                     switch (d) {
                         case 0:
                             direction[p].xdir = PetscAbsReal(direction[p].xdir);
@@ -154,9 +160,9 @@ int main(int argc, char **argv) {
 
         // Move
         for (PetscInt p = 0; p < npLocal; ++p) {
-            coords[p * dimensions + 0] += minCellRadius * direction[p].xdir;
-            coords[p * dimensions + 1] += minCellRadius * direction[p].ydir;
-            coords[p * dimensions + 2] += minCellRadius * direction[p].zdir;
+            coords[p * dimensions + 0] += 0.5 * minCellRadius * direction[p].xdir;
+            coords[p * dimensions + 1] += 0.5 * minCellRadius * direction[p].ydir;
+            coords[p * dimensions + 2] += 0.5 * minCellRadius * direction[p].zdir;
         }
 
         PetscCall(DMSwarmRestoreField(swarmDm, DMSwarmPICField_coor, NULL, NULL, (void **) &coords));
