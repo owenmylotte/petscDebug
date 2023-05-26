@@ -46,6 +46,8 @@ int main(int argc, char **argv) {
     PetscCall(VecSetFromOptions(intersect)); //! Create the vector based on these options
     PetscInt i[3] = {0, 1, 2}; //! Establish the vector index here so that it can be iterated.
 
+    PetscCall(DMGetCoordinatesLocalSetUp(dm));
+
     /** Iterate through all of the cells in the mesh
      * Get the centroid of each cell in the mesh
      * Use DMLocatePoints to get the cell index back out of that location
